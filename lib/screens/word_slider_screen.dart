@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/japanese_word.dart';
 import '../services/excel_service.dart';
+import '../services/tts_service.dart';
 
 class WordSliderScreen extends StatefulWidget {
   const WordSliderScreen({super.key});
@@ -20,6 +21,11 @@ class _WordSliderScreenState extends State<WordSliderScreen> {
   void initState() {
     super.initState();
     _loadWords();
+    _initializeTTS();
+  }
+
+  Future<void> _initializeTTS() async {
+    await TTSService.initialize();
   }
 
   Future<void> _loadWords() async {
@@ -66,9 +72,46 @@ class _WordSliderScreenState extends State<WordSliderScreen> {
     }
   }
 
+  void _firstWord() {
+    if (currentIndex > 0) {
+      setState(() {
+        currentIndex = 0;
+      });
+      _pageController.animateToPage(
+        currentIndex,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _lastWord() {
+    if (currentIndex < words.length - 1) {
+      setState(() {
+        currentIndex = words.length - 1;
+      });
+      _pageController.animateToPage(
+        currentIndex,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  Future<void> _speakKanji() async {
+    final word = words[currentIndex];
+    await TTSService.speakJapanese(word.secondColumn);
+  }
+
+  Future<void> _speakEnglish() async {
+    final word = words[currentIndex];
+    await TTSService.speakEnglish(word.thirdColumn);
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
+    TTSService.stop();
     super.dispose();
   }
 
@@ -172,14 +215,40 @@ class _WordSliderScreenState extends State<WordSliderScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 // Second column (漢字 - Kanji) displayed first with big text
-                                Text(
-                                  word.secondColumn,
-                                  style: const TextStyle(
-                                    fontSize: 48,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
+                                GestureDetector(
+                                  onTap: _speakKanji,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: Colors.grey.withOpacity(0.3),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            word.secondColumn,
+                                            style: const TextStyle(
+                                              fontSize: 48,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black87,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Icon(
+                                          Icons.volume_up,
+                                          size: 32,
+                                          color: Colors.blue[600],
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  textAlign: TextAlign.center,
                                 ),
                                 const SizedBox(height: 32),
                                 // First column (ひらがな - Hiragana) displayed second
@@ -203,25 +272,40 @@ class _WordSliderScreenState extends State<WordSliderScreen> {
                                       textAlign: TextAlign.center,
                                     ),
                                   ),
-                                // Third column
+                                // Third column with TTS
                                 if (word.thirdColumn.isNotEmpty)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 8,
-                                    ),
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green[50],
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      word.thirdColumn,
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        color: Colors.green,
+                                  GestureDetector(
+                                    onTap: _speakEnglish,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 8,
                                       ),
-                                      textAlign: TextAlign.center,
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green[50],
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              word.thirdColumn,
+                                              style: const TextStyle(
+                                                fontSize: 18,
+                                                color: Colors.green,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ),
+                                          Icon(
+                                            Icons.volume_up,
+                                            size: 20,
+                                            color: Colors.green[700],
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 // Fourth column
@@ -256,17 +340,31 @@ class _WordSliderScreenState extends State<WordSliderScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
+                          // First button
+                          ElevatedButton.icon(
+                            onPressed: currentIndex > 0 ? _firstWord : null,
+                            icon: const Icon(Icons.first_page),
+                            label: const Text('First'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                          // Previous button
                           ElevatedButton.icon(
                             onPressed: currentIndex > 0 ? _previousWord : null,
                             icon: const Icon(Icons.arrow_back),
                             label: const Text('Previous'),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
+                                horizontal: 16,
                                 vertical: 12,
                               ),
                             ),
                           ),
+                          // Next button
                           ElevatedButton.icon(
                             onPressed:
                                 currentIndex < words.length - 1 ? _nextWord : null,
@@ -274,7 +372,19 @@ class _WordSliderScreenState extends State<WordSliderScreen> {
                             label: const Text('Next'),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                            ),
+                          ),
+                          // Last button
+                          ElevatedButton.icon(
+                            onPressed: currentIndex < words.length - 1 ? _lastWord : null,
+                            icon: const Icon(Icons.last_page),
+                            label: const Text('Last'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
                                 vertical: 12,
                               ),
                             ),
