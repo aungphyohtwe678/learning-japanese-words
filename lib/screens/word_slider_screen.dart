@@ -171,9 +171,9 @@ class _WordSliderScreenState extends State<WordSliderScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                // First column (big text)
+                                // Second column (漢字 - Kanji) displayed first with big text
                                 Text(
-                                  word.firstColumn,
+                                  word.secondColumn,
                                   style: const TextStyle(
                                     fontSize: 48,
                                     fontWeight: FontWeight.bold,
@@ -182,8 +182,8 @@ class _WordSliderScreenState extends State<WordSliderScreen> {
                                   textAlign: TextAlign.center,
                                 ),
                                 const SizedBox(height: 32),
-                                // Second column
-                                if (word.secondColumn.isNotEmpty)
+                                // First column (ひらがな - Hiragana) displayed second
+                                if (word.firstColumn.isNotEmpty)
                                   Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 16,
@@ -195,7 +195,7 @@ class _WordSliderScreenState extends State<WordSliderScreen> {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
-                                      word.secondColumn,
+                                      word.firstColumn,
                                       style: const TextStyle(
                                         fontSize: 18,
                                         color: Colors.blue,
