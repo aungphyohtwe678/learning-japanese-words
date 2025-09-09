@@ -32,9 +32,13 @@ migrate_working_dir/
 .pub/
 /coverage/
 
-# Allow build/web directory but ignore other build directories
-/build/
-!/build/web/
+# Build directories - ignore specific platforms but allow web
+/build/android/
+/build/ios/
+/build/linux/
+/build/macos/
+/build/windows/
+# build/web/ is intentionally not ignored to allow web deployment
 
 # Symbolication related
 app.*.symbols
